@@ -1,0 +1,18 @@
+#Aliases
+alias gs='git status'
+alias gg='newGitBranch'
+# Use this when you want to pull the latest from a remote branch and place your work on top of it (rebase)
+alias gronk='gf origin && git pull --no-commit --rebase origin'
+# Use this when you want an easier to read view of your git commit log
+alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+# gpsu stands for git push set upstream
+alias gpsu='git push -u origin $(git_current_branch)'
+alias gmb="klaviyocli git branch"
+alias zlibd='(printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - "$@" | gzip -dc)'
+alias klapp='cd ~/Klaviyo/Repos/app'
+alias kl='klaviyocli'
+alias makev='make VARIANT=1'
+alias gbranchdel='git checkout -q master && git for-each-ref refs/heads/ "--format=%(refname:short)" | while read branch; do mergeBase=$(git merge-base master $branch) && [[ $(git cherry master $(git commit-tree $(git rev-parse "$branch^{tree}") -p $mergeBase -m _)) == "-"* ]] && git branch -D $branch; done'
+
+alias lsports='(sudo lsof -i -P | grep LISTEN | grep :$PORT)'
+alias get_ondemand='kl aws ondemand list | grep $USER'

@@ -1,7 +1,8 @@
 source ~/.zsh_aliases
+export GPG_TTY=$(tty)
 # infra repo setup
-export INFRASTRUCTURE_DEPLOYMENT_REPO_PATH="$HOME/Klaviyo/Repos/infrastructure-deployment"
-source $INFRASTRUCTURE_DEPLOYMENT_REPO_PATH/bashenv/source.sh
+#export INFRASTRUCTURE_DEPLOYMENT_REPO_PATH="$HOME/Klaviyo/Repos/infrastructure-deployment"
+#source $INFRASTRUCTURE_DEPLOYMENT_REPO_PATH/bashenv/source.sh
 
 source "$HOME/.cargo/env"
 export DOTNET_ROOT="/usr/local/share/dotnet"
@@ -9,6 +10,9 @@ export PATH="/Users/les.clarke/.klaviyocli/.bin:$PATH"
 export PATH="/Users/les.clarke/bin:$PATH"
 export PATH="$DOTNET_ROOT:$PATH"
 
+export HOMEBREW_NO_AUTO_UPDATE=1
+export MAINLINE_PYTHON=/Users/les.clarke/.pyenv/versions/app/bin/python
+export VARIANT_PYTHON=/Users/les.clarke/.pyenv/versions/app_variant/bin/python
 
 autoload -Uz compinit
 compinit
@@ -83,4 +87,24 @@ snap() {
 # Use this when you rebase and have a bunch of merge conflicts in snapshot files
 snapBack() {
   gs | grep '\.snap' | tr -d '\n' | sed -e 's/\s*both modified:\s*//g' -e 's/\s*modified:\s*//g' -e 's/__snapshots__\///g' -e 's/.snap//g' | xargs yarn test -u
+}
+
+newGitBranch() {
+    git checkout -b "$1"
+    git fetch origin
+    git reset --hard origin/master
+}
+
+
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
+export CHARIOT_SETTINGS=module:klaviyo_schema.kms.config.settings_development
+function s2a-login {
+        export SAML2AWS_CREDENTIALS_FILE=$(mktemp)
+        saml2aws login --session-duration=28700 --force --skip-prompt --cache-saml "$@" && {
+                AWS_ROLE=$(grep ^x_principal_arn "${SAML2AWS_CREDENTIALS_FILE}" 2>/dev/null | cut -d/ -f2)
+                source <(saml2aws script)
+                export S2A_AWS_ROLE="[${AWS_ROLE}] "
+        }
+        rm -rf ${SAML2AWS_CREDENTIALS_FILE}
+        unset SAML2AWS_CREDENTIALS_FILE
 }

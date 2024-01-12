@@ -15,4 +15,7 @@ alias makev='make VARIANT=1'
 alias gbranchdel='git checkout -q master && git for-each-ref refs/heads/ "--format=%(refname:short)" | while read branch; do mergeBase=$(git merge-base master $branch) && [[ $(git cherry master $(git commit-tree $(git rev-parse "$branch^{tree}") -p $mergeBase -m _)) == "-"* ]] && git branch -D $branch; done'
 
 alias lsports='(sudo lsof -i -P | grep LISTEN | grep :$PORT)'
-alias get_ondemand='kl aws ondemand list | grep $USER'
+alias get_ondemand='kl aws ondemand list --mine'
+alias kill_docker="ps axuw | grep docker | grep -v grep | awk '{print \$2}' | xargs kill -9"
+alias aws="/Users/les.clarke/.pyenv/versions/deploy/bin/aws"
+alias git_prune="git prune && rm .git/gc.log"

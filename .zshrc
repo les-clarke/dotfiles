@@ -1,110 +1,134 @@
-source ~/.zsh_aliases
-export GPG_TTY=$(tty)
-# infra repo setup
-#export INFRASTRUCTURE_DEPLOYMENT_REPO_PATH="$HOME/Klaviyo/Repos/infrastructure-deployment"
-#source $INFRASTRUCTURE_DEPLOYMENT_REPO_PATH/bashenv/source.sh
-
-source "$HOME/.cargo/env"
-export DOTNET_ROOT="/usr/local/share/dotnet"
-export PATH="/Users/les.clarke/.klaviyocli/.bin:$PATH"
-export PATH="/Users/les.clarke/bin:$PATH"
-export PATH="$DOTNET_ROOT:$PATH"
-
-export HOMEBREW_NO_AUTO_UPDATE=1
-export MAINLINE_PYTHON=/Users/les.clarke/.pyenv/versions/app/bin/python
-export VARIANT_PYTHON=/Users/les.clarke/.pyenv/versions/app_variant/bin/python
-
+zmodload zsh/zprof
+PROFILE_STARTUP=false
+if [[ "$PROFILE_STARTUP" == true ]]; then
+    # http://zsh.sourceforge.net/Doc/Release/Prompt-Expansion.html
+    PS4=$'%D{%M:%S.%6.}(%x:%I): '
+    exec 3>&2 2> >(awk '{ if ($1 ~ /^[0-9][0-9]:[0-9][0-9].[0-9]+/ && $1 > 0.1) print }' > /tmp/startlog.$$)
+    setopt xtrace prompt_subst
+fi
 autoload -Uz compinit
-compinit
 
-#Mono repo shell config https://github.com/klaviyo/app/blob/master/docs/shell_config.md
-source ~/Klaviyo/Repos/app/config/app/osx_dev_profile.bash
-export KL_SSH_USERNAME=lesclarke
-export KL_GIT_INITIALS=LC
-export GITHUB_USERNAME="les-clarke"
-eval "$(_KLAVIYOCLI_COMPLETE=zsh_source klaviyocli)"
-
-# Path to your oh-my-zsh installation.
+# Initialize compinit once
+if [[ -z "$ZSH_COMPDUMP" ]]; then
+  export ZSH_COMPDUMP="${ZDOTDIR:-$HOME}/.zcompdump"
+fi
+# Only run compinit once per day
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
+eval "$(/opt/homebrew/bin/brew shellenv)"
 export ZSH="$HOME/.oh-my-zsh"
+export GOPATH="$HOME/go"
+path=(
+    "$HOME/scripts"
+    "$HOME/.klaviyocli/.bin"
+    "$GOPATH/bin"
+    "$HOME/protoc-25.4-osx-aarch_64/bin"
+    "/Users/les.clarke/.cargo/bin"
+    $path
+)
+export PATH
+ZSH_THEME="robbyrussell"
+#nvm stuff
+export NVM_LAZY_LOAD=true;
+export NVM_COMPLETION=true;
+export NVM_DIR="$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.nvm" || printf %s "${XDG_CONFIG_HOME}/nvm")"
+plugins=(
+  "git"
+  "zsh-nvm"
+  "direnv"
+)
+source $ZSH/oh-my-zsh.sh
 unsetopt inc_append_history
 unsetopt share_history
 
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="kolo"
-
-
-# Uncomment the following line to enable command auto-correction.
 #disable auto correct
 ENABLE_CORRECTION="false"
 unsetopt correct_all
 unsetopt correct
 
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
+# User configuration
+export GPG_TTY=$(tty)
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+ulimit -Sn 10240
+source /Users/les.clarke/.s2a_login
+source /Users/les.clarke/.apprc
+export CURRENT_UID="$(id -u):$(id -g)"
+export MAINLINE_PYTHON=/Users/les.clarke/.pyenv/versions/app/bin/python
+export PATH="$HOME/.klaviyocli/.bin:$PATH"
+# Lazy load klaviyocli completion
+klaviyo_completion_init() {
+    unfunction klaviyo_completion_init
+}
+compdef klaviyo_completion_init klaviyocli
+export KL_SSH_USERNAME=lesclarke
+export KL_GIT_INITIALS=LC
 
+export CHARIOT_SETTINGS=module:klaviyo_schema.kms.config.settings_development
+export GOPRIVATE=github.com/klaviyo
+# Set personal aliases, overriding those provided by oh-my-zsh libs,
+source ~/.zsh_aliases
+[ -f ~/.zsh_secrets ] && source ~/.zsh_secrets
 
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
-
-source $ZSH/oh-my-zsh.sh
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-# place this after nvm initialization!
 autoload -U add-zsh-hook
-load-nvmrc() {
-  local node_version="$(nvm version)"
-  local nvmrc_path="$(nvm_find_nvmrc)"
-
-  if [ -n "$nvmrc_path" ]; then
-    local nvmrc_node_version=$(nvm version "$(cat "${nvmrc_path}")")
-
-    if [ "$nvmrc_node_version" != "$node_version" ]; then
-      nvm use
-    fi
-  fi
-}
-add-zsh-hook chpwd load-nvmrc
-load-nvmrc
-
-#https://klaviyo.atlassian.net/wiki/spaces/EN/pages/3573252187/Helpful+Bash+Zsh+Scripts
-#Use this when you update a component and now have a bunch of failing snapshot tests from other packages in CI.
-snap() {
-  echo $1 | tr -d '\n' | sed -e 's/* \// /g' | xargs yarn test -u
-}
-
-# Use this when you rebase and have a bunch of merge conflicts in snapshot files
-snapBack() {
-  gs | grep '\.snap' | tr -d '\n' | sed -e 's/\s*both modified:\s*//g' -e 's/\s*modified:\s*//g' -e 's/__snapshots__\///g' -e 's/.snap//g' | xargs yarn test -u
-}
-
-newGitBranch() {
-    git checkout -b "$1"
-    git fetch origin
-    git reset --hard origin/master
-}
 
 
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
-export CHARIOT_SETTINGS=module:klaviyo_schema.kms.config.settings_development
-function s2a-login {
-        export SAML2AWS_CREDENTIALS_FILE=$(mktemp)
-        saml2aws login --session-duration=28700 --force --skip-prompt --cache-saml "$@" && {
-                AWS_ROLE=$(grep ^x_principal_arn "${SAML2AWS_CREDENTIALS_FILE}" 2>/dev/null | cut -d/ -f2)
-                source <(saml2aws script)
-                export S2A_AWS_ROLE="[${AWS_ROLE}] "
-        }
-        rm -rf ${SAML2AWS_CREDENTIALS_FILE}
-        unset SAML2AWS_CREDENTIALS_FILE
-}
+if [[ "$PROFILE_STARTUP" == true ]]; then
+    unsetopt xtrace
+    exec 2>&3 3>&-
+    # Show results
+    echo "Startup log saved to /tmp/startlog.$$"
+fi
+export CHARIOT_SETTINGS=/Users/les.clarke/Klaviyo/Repos/k-repo/python/klaviyo/kms/config/settings/settings_development.py
+export KCLI_AUTO_UPDATE=true
+export AWS_REGION=us-east-1  # or your preferred region
+export SAML2AWS_SESSION_DURATION=28800
+source ~/.klaviyocli/.zshcompletions/_klaviyocli || true
+export PATH="$HOME/.local/bin:$PATH"
+export KL_LOCAL_MYSQL_ROOT_PASSWORD=nYOYtP7OOHaeDnBaOmRb
+export KL_AWS_CUSTOM_S3_ENDPOINT=http://localhost:9000
+export KL_LOCAL_DYNAMODB_ENDPOINT=http://localhost:4566
+export KL_LOCAL_KMS_ENDPOINT=http://localhost:4566
+
+find-pod() {
+      if [ -z "$1" ] || [ -z "$2" ]; then
+          echo "Usage: find-pod <namespace> <pod-name>"
+          return 1
+      fi
+
+      local namespace="$1"
+      local pod_name="$2"
+      local original_context=$(kubectl config current-context)
+
+      echo "Searching for pod '$pod_name' in namespace '$namespace'..."
+
+      # Read contexts line by line
+      kubectl config get-contexts -o name | grep "prod-edam" | while read -r context; do
+          echo "Checking context: $context"
+          kubectl config use-context "$context" &>/dev/null
+
+          # Capture kubectl output to check for specific errors
+          local result=$(kubectl get pod "$pod_name" -n "$namespace" 2>&1)
+
+          if echo "$result" | grep -q "Unauthorized"; then
+              echo "⚠ Unauthorized - you need to log in to this cluster"
+              echo "Try s2a-login"
+              return -1
+          fi
+
+          if echo "$result" | grep -qv "NotFound" && echo "$result" | grep -qv "Error"; then
+              echo "✓ Found pod in context: $context"
+              return 0
+          fi
+      done
+
+      echo "✗ Pod not found in any context"
+      kubectl config use-context "$original_context" &>/dev/null
+      echo "Switched back to original context: $original_context"
+      return 1
+  }

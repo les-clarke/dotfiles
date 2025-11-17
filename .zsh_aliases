@@ -4,7 +4,7 @@ alias gg='newGitBranch'
 # Use this when you want to pull the latest from a remote branch and place your work on top of it (rebase)
 alias gronk='gf origin && git pull --no-commit --rebase origin'
 # Use this when you want an easier to read view of your git commit log
-alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+alias gl="git log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
 # gpsu stands for git push set upstream
 alias gpsu='git push -u origin $(git_current_branch)'
 alias gmb="klaviyocli git branch"
@@ -12,10 +12,47 @@ alias zlibd='(printf "\x1f\x8b\x08\x00\x00\x00\x00\x00" | cat - "$@" | gzip -dc)
 alias klapp='cd ~/Klaviyo/Repos/app'
 alias kl='klaviyocli'
 alias makev='make VARIANT=1'
-alias gbranchdel='git checkout -q master && git for-each-ref refs/heads/ "--format=%(refname:short)" | while read branch; do mergeBase=$(git merge-base master $branch) && [[ $(git cherry master $(git commit-tree $(git rev-parse "$branch^{tree}") -p $mergeBase -m _)) == "-"* ]] && git branch -D $branch; done'
-
+alias gbranchdel='$HOME/scripts/delete_merged_branches.sh'
 alias lsports='(sudo lsof -i -P | grep LISTEN | grep :$PORT)'
 alias get_ondemand='kl aws ondemand list --mine'
 alias kill_docker="ps axuw | grep docker | grep -v grep | awk '{print \$2}' | xargs kill -9"
-alias aws="/Users/les.clarke/.pyenv/versions/deploy/bin/aws"
+#alias aws="/Users/les.clarke/.pyenv/versions/deploy/bin/aws"
 alias git_prune="git prune && rm .git/gc.log"
+alias gp="git push"
+alias vpn-up="networksetup -connectpppoeservice '[US-EAST] AWS VPN'"
+alias vpn-down="networksetup -disconnectpppoeservice '[US-EAST] AWS VPN'"
+
+# MCP Server Management
+alias mcps='docker-compose -f ~/docker-compose.yml up -d'
+alias mcps-stop='docker-compose -f ~/docker-compose.yml down'
+alias mcps-logs='docker-compose -f ~/docker-compose.yml logs -f'
+alias mcps-status='docker-compose -f ~/docker-compose.yml ps'
+alias mcps-restart='docker-compose -f ~/docker-compose.yml restart'
+eh () {
+	rg -g "*" . "${HOME}/Klaviyo/repos/eng-handbook/" | fzf --delimiter=":" --preview "glow {1} -s dark -w 120" --preview-window "down,70%" --reverse | while IFS=":" read -r file_path _
+	do
+		file_path="${file_path#${HOME}/Klaviyo/repos/eng-handbook/}"
+		local base_url="https://github.com/klaviyo/eng-handbook/blob/master/"
+		local url="${base_url}${file_path}"
+		open "$url"
+	done
+}
+function kchariot { cd ~/Klaviyo/Repos/k-repo && pants run python/klaviyo/kms/chariot:chariot -- $@ && cd - }
+# Alias for pytest that runs different commands based on the current directory.
+alias pytest='_conditional_pytest_runner'
+
+_conditional_pytest_runner() {
+  # Get the current working directory.
+  current_dir="$(pwd)"
+
+  # Check if the current directory is the specific path for the Klaviyo app.
+  if [[ "$current_dir" == "/Users/les.clarke/Klaviyo/Repos/app" ]]; then
+    # Execute the specific command with all the flags and pass along any arguments ($@).
+    # The 'command' keyword ensures we call the actual executable and not this alias again.
+    command bin/pytest --runintegration --runregression --rune2e --runslow "$@"
+  else
+    # For any other directory, just run the standard pytest command.
+    command pytest "$@"
+  fi
+}
+

@@ -22,12 +22,6 @@ alias gp="git push"
 alias vpn-up="networksetup -connectpppoeservice '[US-EAST] AWS VPN'"
 alias vpn-down="networksetup -disconnectpppoeservice '[US-EAST] AWS VPN'"
 
-# MCP Server Management
-alias mcps='docker-compose -f ~/docker-compose.yml up -d'
-alias mcps-stop='docker-compose -f ~/docker-compose.yml down'
-alias mcps-logs='docker-compose -f ~/docker-compose.yml logs -f'
-alias mcps-status='docker-compose -f ~/docker-compose.yml ps'
-alias mcps-restart='docker-compose -f ~/docker-compose.yml restart'
 eh () {
 	rg -g "*" . "${HOME}/Klaviyo/repos/eng-handbook/" | fzf --delimiter=":" --preview "glow {1} -s dark -w 120" --preview-window "down,70%" --reverse | while IFS=":" read -r file_path _
 	do
